@@ -5,6 +5,8 @@
 #include <iostream>
 #include <vector>
 
+typedef std::vector<std::vector<float>> Distances;
+
 struct City
 {
     float x, y;
@@ -15,6 +17,7 @@ struct City
 };
 
 std::vector<City> getCities();
+Distances getDistances(const std::vector<City>& cities);
 float getDistance(const City& a, const City& b);
 
 #endif

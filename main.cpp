@@ -2,20 +2,49 @@
 #define _GLIBCXX_USE_NANOSLEEP
 
 #include "main.hpp"
+#include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <cfloat>
 
 
 int main(int argc, char** argv)
 {
     std::vector<City> cities = getCities();
+    Distances distances = getDistances(cities);
+}
 
+
+
+Distances getDistances(const std::vector<City>& cities)
+{
+    std::cout << "Calculating distances... ";
+
+    Distances distances(cities.size());
+    std::generate(distances.begin(), distances.end(),
+        [&]() { return std::vector<float>(cities.size()); }
+    );
+
+    for (std::size_t j = 0; j < cities.size(); j++)
+    {
+        for (std::size_t k = 0; k < cities.size(); k++)
+        {
+            float distance = j != k ? getDistance(cities[j], cities[k]) : FLT_MAX;
+            distances[j][k] = distance;
+            distances[k][j] = distance;
+        }
+    }
+
+    std::cout << "done." << std::endl;
+    return distances;
 }
 
 
 
 std::vector<City> getCities()
 {
+    std::cout << "Loading cities from file... ";
+
     std::string data;
     std::ifstream fin("tsp.txt", std::ios::in);
     fin.seekg(0, std::ios::end);
@@ -45,6 +74,7 @@ std::vector<City> getCities()
             loading = true;
     }
 
+    std::cout << "done." << std::endl;
     return cities;
 }
 
@@ -53,5 +83,5 @@ std::vector<City> getCities()
 float getDistance(const City& a, const City& b)
 {
     float xDiff = b.x - a.x, yDiff = b.y - a.y;
-    return xDiff * xDiff + yDiff * yDiff;
+    return std::sqrt(xDiff * xDiff + yDiff * yDiff);
 }
