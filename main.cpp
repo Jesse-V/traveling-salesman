@@ -15,10 +15,106 @@ int main(int argc, char** argv)
 {
     distances_ = getDistances(getCities());
 
-    test(std::make_pair(1, 12), std::make_pair(13, 13), std::make_pair(14, 14),
-        std::make_pair(15, 15), std::make_pair(16, 16), doExhaustive);
+    //test(std::make_pair(1, 12), std::make_pair(13, 13), std::make_pair(14, 14),
+    //    std::make_pair(15, 15), std::make_pair(16, 16), doExhaustive);
 
+    test(std::make_pair(1, 10), std::make_pair(2, 1), std::make_pair(2, 1),
+        std::make_pair(2, 1), std::make_pair(2, 1), doBranchAndBound);
 }
+
+
+
+void exhaustive(std::vector<int>& visited, std::size_t depth,
+                float& bestSoFar, std::size_t maxCities
+)
+{
+    if (depth == maxCities)
+    {
+        //std::cout << "Tour { ";
+
+        float cost = 0;
+        std::size_t j;
+        for (j = 0; j < visited.size() - 1; j++)
+        {
+            //std::cout << visited[j] << " ";
+            cost += distances_[visited[j]][visited[j + 1]];
+        }
+        cost += distances_[visited[j]][visited[0]];
+
+        //std::cout << visited[j] << " " << visited[0] <<
+        //    " } cost of " << cost << std::endl;
+
+        if (cost < bestSoFar)
+            bestSoFar = cost;
+
+        return;
+    }
+
+    for (int j = 0; j < maxCities; j++)
+    {
+        if (std::find(visited.begin(), visited.end(), j) == visited.end())
+        {
+            visited.push_back(j);
+            exhaustive(visited, depth + 1, bestSoFar, maxCities);
+            visited.pop_back();
+        }
+    }
+}
+
+
+
+void branchAndBound(std::vector<int>& visited, std::size_t depth,
+                float& bestSoFar, std::size_t maxCities
+)
+{
+    if (depth == maxCities)
+    {
+        //std::cout << "Tour { ";
+
+        float cost = 0;
+        std::size_t j;
+        for (j = 0; j < visited.size() - 1; j++)
+        {
+            //std::cout << visited[j] << " ";
+            cost += distances_[visited[j]][visited[j + 1]];
+        }
+        cost += distances_[visited[j]][visited[0]];
+
+        //std::cout << visited[j] << " " << visited[0] <<
+        //    " } cost of " << cost << std::endl;
+
+        if (cost < bestSoFar)
+            bestSoFar = cost;
+
+        return;
+    }
+
+    for (int j = 0; j < maxCities; j++)
+    {
+        if (std::find(visited.begin(), visited.end(), j) == visited.end())
+        {
+            visited.push_back(j);
+            exhaustive(visited, depth + 1, bestSoFar, maxCities);
+            visited.pop_back();
+        }
+    }
+}
+
+
+
+std::pair<long, float> doBranchAndBound(int depth)
+{
+    using namespace std::chrono;
+
+    float best = FLT_MAX;
+    std::vector<int> stack;
+
+    auto start = steady_clock::now();
+    branchAndBound(stack, 0, best, depth);
+    long us = duration_cast<microseconds>(steady_clock::now() - start).count();
+    return std::make_pair(us, best);
+}
+
 
 
 void test(std::pair<int, int> a, std::pair<int, int> b, std::pair<int, int> c,
@@ -71,60 +167,6 @@ void test(std::pair<int, int> a, std::pair<int, int> b, std::pair<int, int> c,
     thread3.join();
     thread4.join();
     thread5.join();
-}
-
-
-
-std::pair<long, float> doExhaustive(int depth)
-{
-    using namespace std::chrono;
-
-    float best = FLT_MAX;
-    std::vector<int> stack;
-
-    auto start = steady_clock::now();
-    exhaustive(stack, 0, best, depth);
-    long us = duration_cast<microseconds>(steady_clock::now() - start).count();
-    return std::make_pair(us, best);
-}
-
-
-
-void exhaustive(std::vector<int>& visited, std::size_t depth,
-                float& bestSoFar, std::size_t maxCities
-)
-{
-    if (depth == maxCities)
-    {
-        //std::cout << "Tour { ";
-
-        float cost = 0;
-        std::size_t j;
-        for (j = 0; j < visited.size() - 1; j++)
-        {
-            //std::cout << visited[j] << " ";
-            cost += distances_[visited[j]][visited[j + 1]];
-        }
-        cost += distances_[visited[j]][visited[0]];
-
-        //std::cout << visited[j] << " " << visited[0] <<
-        //    " } cost of " << cost << std::endl;
-
-        if (cost < bestSoFar)
-            bestSoFar = cost;
-
-        return;
-    }
-
-    for (int j = 0; j < maxCities; j++)
-    {
-        if (std::find(visited.begin(), visited.end(), j) == visited.end())
-        {
-            visited.push_back(j);
-            exhaustive(visited, depth + 1, bestSoFar, maxCities);
-            visited.pop_back();
-        }
-    }
 }
 
 
