@@ -14,14 +14,7 @@ Distances distances_;
 int main(int argc, char** argv)
 {
     distances_ = getDistances(getCities());
-/*
-    for (int depth = 1; depth < 12; depth++)
-    {
-        std::cout << depth << ": ";
-        long ms = doExhaustive(depth);
-        std::cout << ms << " microseconds" << std::endl;
-    }*/
-//1 11
+
     test(std::make_pair(1, 11), std::make_pair(12, 12), std::make_pair(13, 13),
         std::make_pair(14, 14), std::make_pair(15, 15), doExhaustive);
 
