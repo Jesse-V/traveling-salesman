@@ -15,20 +15,21 @@ int main(int argc, char** argv)
 {
     distances_ = getDistances(getCities());
 
-    test(std::make_pair(1, 11), std::make_pair(12, 12), std::make_pair(13, 13),
-        std::make_pair(14, 14), std::make_pair(15, 15), doExhaustive);
+    test(std::make_pair(1, 12), std::make_pair(13, 13), std::make_pair(14, 14),
+        std::make_pair(15, 15), std::make_pair(16, 16), doExhaustive);
 
 }
 
 
 void test(std::pair<int, int> a, std::pair<int, int> b, std::pair<int, int> c,
-          std::pair<int, int> d, std::pair<int, int> e, long (*func)(int depth))
+          std::pair<int, int> d, std::pair<int, int> e,
+          std::pair<long, float> (*func)(int depth))
 {
     std::thread thread1([&]() {
         for (int j = a.first; j <= a.second; j++)
         {
-            long microsec = (*func)(j);
-            std::cout << j << ": " << microsec << " microsec" << std::endl;
+            auto data = (*func)(j);
+            std::cout << j << ": " << data.first << " " << data.second << std::endl;
         }
 
     });
@@ -36,32 +37,32 @@ void test(std::pair<int, int> a, std::pair<int, int> b, std::pair<int, int> c,
     std::thread thread2([&]() {
         for (int j = b.first; j <= b.second; j++)
         {
-            long microsec = (*func)(j);
-            std::cout << j << ": " << microsec << " microsec" << std::endl;
+            auto data = (*func)(j);
+            std::cout << j << ": " << data.first << " " << data.second << std::endl;
         }
     });
 
     std::thread thread3([&]() {
         for (int j = c.first; j <= c.second; j++)
         {
-            long microsec = (*func)(j);
-            std::cout << j << ": " << microsec << " microsec" << std::endl;
+            auto data = (*func)(j);
+            std::cout << j << ": " << data.first << " " << data.second << std::endl;
         }
     });
 
     std::thread thread4([&]() {
         for (int j = d.first; j <= d.second; j++)
         {
-            long microsec = (*func)(j);
-            std::cout << j << ": " << microsec << " microsec" << std::endl;
+            auto data = (*func)(j);
+            std::cout << j << ": " << data.first << " " << data.second << std::endl;
         }
     });
 
     std::thread thread5([&]() {
         for (int j = e.first; j <= e.second; j++)
         {
-            long microsec = (*func)(j);
-            std::cout << j << ": " << microsec << " microsec" << std::endl;
+            auto data = (*func)(j);
+            std::cout << j << ": " << data.first << " " << data.second << std::endl;
         }
     });
 
@@ -74,7 +75,7 @@ void test(std::pair<int, int> a, std::pair<int, int> b, std::pair<int, int> c,
 
 
 
-long doExhaustive(int depth)
+std::pair<long, float> doExhaustive(int depth)
 {
     using namespace std::chrono;
 
@@ -83,7 +84,8 @@ long doExhaustive(int depth)
 
     auto start = steady_clock::now();
     exhaustive(stack, 0, best, depth);
-    return duration_cast<microseconds>(steady_clock::now() - start).count();
+    long us = duration_cast<microseconds>(steady_clock::now() - start).count();
+    return std::make_pair(us, best);
 }
 
 
