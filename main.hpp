@@ -16,6 +16,9 @@ struct City
     {}
 };
 
+void exhaustive(std::vector<int>& visited, std::size_t depth,
+                float& bestSoFar, std::size_t maxCities);
+
 std::vector<City> getCities();
 Distances getDistances(const std::vector<City>& cities);
 float getDistance(const City& a, const City& b);

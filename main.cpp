@@ -7,11 +7,56 @@
 #include <sstream>
 #include <cfloat>
 
+Distances distances_;
 
 int main(int argc, char** argv)
 {
-    std::vector<City> cities = getCities();
-    Distances distances = getDistances(cities);
+    distances_ = getDistances(getCities());
+
+    float best = FLT_MAX;
+    std::vector<int> stack;
+    exhaustive(stack, 0, best, 3);
+    std::cout << best << std::endl;
+}
+
+
+
+void exhaustive(std::vector<int>& visited, std::size_t depth,
+                float& bestSoFar, std::size_t maxCities
+)
+{
+    if (depth == maxCities)
+    {
+        std::cout << "Tour { ";
+
+        float cost = 0;
+        std::size_t j;
+        for (j = 0; j < visited.size() - 1; j++)
+        {
+            std::cout << visited[j] << " ";
+            cost += distances_[visited[j]][visited[j + 1]];
+        }
+        cost += distances_[visited[j]][visited[0]];
+
+        std::cout << visited[j] << " " << visited[0] <<
+            " } cost of " << cost << std::endl;
+        //std::cout << distances_[visited[j]][visited[0]] << std::endl;
+
+        if (cost < bestSoFar)
+            bestSoFar = cost;
+
+        return;
+    }
+
+    for (int j = 0; j < maxCities; j++)
+    {
+        if (std::find(visited.begin(), visited.end(), j) == visited.end())
+        {
+            visited.push_back(j);
+            exhaustive(visited, depth + 1, bestSoFar, maxCities);
+            visited.pop_back();
+        }
+    }
 }
 
 
