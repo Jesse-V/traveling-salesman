@@ -3,8 +3,10 @@
 
 #include "main.hpp"
 #include <algorithm>
+#include <thread>
 #include <fstream>
 #include <sstream>
+#include <chrono>
 #include <cfloat>
 
 Distances distances_;
@@ -12,11 +14,83 @@ Distances distances_;
 int main(int argc, char** argv)
 {
     distances_ = getDistances(getCities());
+/*
+    for (int depth = 1; depth < 12; depth++)
+    {
+        std::cout << depth << ": ";
+        long ms = doExhaustive(depth);
+        std::cout << ms << " microseconds" << std::endl;
+    }*/
+//1 11
+    test(std::make_pair(1, 11), std::make_pair(12, 12), std::make_pair(13, 13),
+        std::make_pair(14, 14), std::make_pair(15, 15), doExhaustive);
+
+}
+
+
+void test(std::pair<int, int> a, std::pair<int, int> b, std::pair<int, int> c,
+          std::pair<int, int> d, std::pair<int, int> e, long (*func)(int depth))
+{
+    std::thread thread1([&]() {
+        for (int j = a.first; j <= a.second; j++)
+        {
+            long microsec = (*func)(j);
+            std::cout << j << ": " << microsec << " microsec" << std::endl;
+        }
+
+    });
+
+    std::thread thread2([&]() {
+        for (int j = b.first; j <= b.second; j++)
+        {
+            long microsec = (*func)(j);
+            std::cout << j << ": " << microsec << " microsec" << std::endl;
+        }
+    });
+
+    std::thread thread3([&]() {
+        for (int j = c.first; j <= c.second; j++)
+        {
+            long microsec = (*func)(j);
+            std::cout << j << ": " << microsec << " microsec" << std::endl;
+        }
+    });
+
+    std::thread thread4([&]() {
+        for (int j = d.first; j <= d.second; j++)
+        {
+            long microsec = (*func)(j);
+            std::cout << j << ": " << microsec << " microsec" << std::endl;
+        }
+    });
+
+    std::thread thread5([&]() {
+        for (int j = e.first; j <= e.second; j++)
+        {
+            long microsec = (*func)(j);
+            std::cout << j << ": " << microsec << " microsec" << std::endl;
+        }
+    });
+
+    thread1.join();
+    thread2.join();
+    thread3.join();
+    thread4.join();
+    thread5.join();
+}
+
+
+
+long doExhaustive(int depth)
+{
+    using namespace std::chrono;
 
     float best = FLT_MAX;
     std::vector<int> stack;
-    exhaustive(stack, 0, best, 3);
-    std::cout << best << std::endl;
+
+    auto start = steady_clock::now();
+    exhaustive(stack, 0, best, depth);
+    return duration_cast<microseconds>(steady_clock::now() - start).count();
 }
 
 
@@ -27,20 +101,19 @@ void exhaustive(std::vector<int>& visited, std::size_t depth,
 {
     if (depth == maxCities)
     {
-        std::cout << "Tour { ";
+        //std::cout << "Tour { ";
 
         float cost = 0;
         std::size_t j;
         for (j = 0; j < visited.size() - 1; j++)
         {
-            std::cout << visited[j] << " ";
+            //std::cout << visited[j] << " ";
             cost += distances_[visited[j]][visited[j + 1]];
         }
         cost += distances_[visited[j]][visited[0]];
 
-        std::cout << visited[j] << " " << visited[0] <<
-            " } cost of " << cost << std::endl;
-        //std::cout << distances_[visited[j]][visited[0]] << std::endl;
+        //std::cout << visited[j] << " " << visited[0] <<
+        //    " } cost of " << cost << std::endl;
 
         if (cost < bestSoFar)
             bestSoFar = cost;

@@ -15,4 +15,4 @@ add_executable(tsp
     main.cpp
 )
 
-target_link_libraries(tsp)
+target_link_libraries(tsp pthread)

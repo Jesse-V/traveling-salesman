@@ -16,6 +16,10 @@ struct City
     {}
 };
 
+void test(std::pair<int, int> a, std::pair<int, int> b, std::pair<int, int> c,
+          std::pair<int, int> d, std::pair<int, int> e, long (*func)(int depth));
+
+long doExhaustive(int depth);
 void exhaustive(std::vector<int>& visited, std::size_t depth,
                 float& bestSoFar, std::size_t maxCities);
 
