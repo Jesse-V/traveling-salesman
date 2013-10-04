@@ -21,12 +21,15 @@ void exhaustive(std::vector<int>& stack, std::size_t depth, std::size_t maxD,
 void branchAndBound(std::vector<int>& stack, std::size_t depth, std::size_t maxD,
                 float& bestSoFar, std::vector<bool>& visited);
 
+std::pair<long, float> doExhaustive(std::size_t depth);
+std::pair<long, float> doBranchAndBound(std::size_t depth);
+
 std::pair<long, float> test(void (*func)(std::vector<int>& stack,
                         std::size_t depth, std::size_t maxD, float& bestSoFar,
                         std::vector<bool>& visited), std::size_t depth);
 void test(std::pair<int, int> a, std::pair<int, int> b, std::pair<int, int> c,
           std::pair<int, int> d, std::pair<int, int> e,
-          std::pair<long, float> (*func)(int depth));
+          std::pair<long, float> (*func)(std::size_t depth));
 
 std::vector<City> getCities();
 Distances getDistances(const std::vector<City>& cities);

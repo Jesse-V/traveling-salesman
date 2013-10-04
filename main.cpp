@@ -15,37 +15,11 @@ int main(int argc, char** argv)
 {
     distances_ = getDistances(getCities());
 
-    //test(std::make_pair(1, 11), std::make_pair(2, 1), std::make_pair(2, 1),
-    //    std::make_pair(2, 1), std::make_pair(2, 1), doExhaustive);
+    test(std::make_pair(1, 11), std::make_pair(12, 12), std::make_pair(13, 13),
+         std::make_pair(14, 14), std::make_pair(15, 15), doExhaustive);
 
-    //test(std::make_pair(1, 11), std::make_pair(2, 1), std::make_pair(2, 1),
-    //    std::make_pair(2, 1), std::make_pair(2, 1), doBranchAndBound);
-
-    auto result1 = test(exhaustive, 10);
-    std::cout << result1.first << " " << result1.second << std::endl;
-
-    auto result2 = test(branchAndBound, 10);
-    std::cout << result2.first << " " << result2.second << std::endl;
-
-/*
-    int j = 3;
-    float minA = FLT_MAX, minB = FLT_MAX;
-    for (int k = 0; k < 10; k++)
-    {
-        float dist = distances_[j][k];
-        if (dist < minB)
-        {
-            if (dist < minA)
-            {
-                minB = minA;
-                minA = dist;
-            }
-            else
-                minB = dist;
-        }
-    }
-    std::cout << minA << " " << minB;
-*/
+    test(std::make_pair(1, 11), std::make_pair(12, 12), std::make_pair(13, 13),
+         std::make_pair(14, 14), std::make_pair(15, 15), doBranchAndBound);
 }
 
 
@@ -68,12 +42,12 @@ void exhaustive(std::vector<int>& stack, std::size_t depth, std::size_t maxD,
         return;
     }
 
-    for (int j = 0; j < maxD; j++)
+    for (std::size_t j = 0; j < maxD; j++)
     {
         if (!visited[j])
         {
             visited[j] = true;
-            stack.push_back(j);
+            stack.push_back((int)j);
             exhaustive(stack, depth + 1, maxD, bestSoFar, visited);
             stack.pop_back();
             visited[j] = false;
@@ -131,12 +105,12 @@ void branchAndBound(std::vector<int>& stack, std::size_t depth, std::size_t maxD
     if (bestSoFar < 0.5f * lowerBound)
         return;
 
-    for (int j = 0; j < maxD; j++)
+    for (std::size_t j = 0; j < maxD; j++)
     {
         if (!visited[j])
         {
             visited[j] = true;
-            stack.push_back(j);
+            stack.push_back((int)j);
             branchAndBound(stack, depth + 1, maxD, bestSoFar, visited);
             stack.pop_back();
             visited[j] = false;
@@ -146,10 +120,9 @@ void branchAndBound(std::vector<int>& stack, std::size_t depth, std::size_t maxD
 
 
 
-std::pair<long, float> test(void (*func)(std::vector<int>& stack,
-    std::size_t depth, std::size_t maxD, float& bestSoFar,
-    std::vector<bool>& visited), std::size_t depth)
-{
+std::pair<long, float> doExhaustive(std::size_t depth)
+{ //almost identical code to doBranchAndBound
+
     using namespace std::chrono;
 
     float best = FLT_MAX;
@@ -157,7 +130,24 @@ std::pair<long, float> test(void (*func)(std::vector<int>& stack,
     std::vector<bool> visited(depth, false);
 
     auto start = steady_clock::now();
-    (*func)(stack, 0, depth, best, visited);
+    exhaustive(stack, 0, depth, best, visited);
+    long us = duration_cast<microseconds>(steady_clock::now() - start).count();
+    return std::make_pair(us, best);
+}
+
+
+
+std::pair<long, float> doBranchAndBound(std::size_t depth)
+{ //almost identical code to doExhaustive
+
+    using namespace std::chrono;
+
+    float best = FLT_MAX;
+    std::vector<int> stack;
+    std::vector<bool> visited(depth, false);
+
+    auto start = steady_clock::now();
+    branchAndBound(stack, 0, depth, best, visited);
     long us = duration_cast<microseconds>(steady_clock::now() - start).count();
     return std::make_pair(us, best);
 }
@@ -166,12 +156,12 @@ std::pair<long, float> test(void (*func)(std::vector<int>& stack,
 
 void test(std::pair<int, int> a, std::pair<int, int> b, std::pair<int, int> c,
           std::pair<int, int> d, std::pair<int, int> e,
-          std::pair<long, float> (*func)(int depth))
+          std::pair<long, float> (*func)(std::size_t depth))
 {
     std::thread thread1([&]() {
         for (int j = a.first; j <= a.second; j++)
         {
-            auto data = (*func)(j);
+            auto data = (*func)((std::size_t)j);
             std::cout << j << ": " << data.first << " " << data.second << std::endl;
         }
 
@@ -180,7 +170,7 @@ void test(std::pair<int, int> a, std::pair<int, int> b, std::pair<int, int> c,
     std::thread thread2([&]() {
         for (int j = b.first; j <= b.second; j++)
         {
-            auto data = (*func)(j);
+            auto data = (*func)((std::size_t)j);
             std::cout << j << ": " << data.first << " " << data.second << std::endl;
         }
     });
@@ -188,7 +178,7 @@ void test(std::pair<int, int> a, std::pair<int, int> b, std::pair<int, int> c,
     std::thread thread3([&]() {
         for (int j = c.first; j <= c.second; j++)
         {
-            auto data = (*func)(j);
+            auto data = (*func)((std::size_t)j);
             std::cout << j << ": " << data.first << " " << data.second << std::endl;
         }
     });
@@ -196,7 +186,7 @@ void test(std::pair<int, int> a, std::pair<int, int> b, std::pair<int, int> c,
     std::thread thread4([&]() {
         for (int j = d.first; j <= d.second; j++)
         {
-            auto data = (*func)(j);
+            auto data = (*func)((std::size_t)j);
             std::cout << j << ": " << data.first << " " << data.second << std::endl;
         }
     });
@@ -204,7 +194,7 @@ void test(std::pair<int, int> a, std::pair<int, int> b, std::pair<int, int> c,
     std::thread thread5([&]() {
         for (int j = e.first; j <= e.second; j++)
         {
-            auto data = (*func)(j);
+            auto data = (*func)((std::size_t)j);
             std::cout << j << ": " << data.first << " " << data.second << std::endl;
         }
     });
