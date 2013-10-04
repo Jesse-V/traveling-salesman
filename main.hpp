@@ -21,9 +21,8 @@ void exhaustive(std::vector<int>& visited, std::size_t depth,
 void branchAndBound(std::vector<int>& visited, std::size_t depth,
                 float& bestSoFar, std::size_t maxCities);
 
-std::pair<long, float> doExhaustive(int depth);
-std::pair<long, float> doBranchAndBound(int depth);
-
+std::pair<long, float> test(void (*func)(std::vector<int>& visited, std::size_t depth,
+                            float& bestSoFar, std::size_t maxCities), int depth);
 void test(std::pair<int, int> a, std::pair<int, int> b, std::pair<int, int> c,
           std::pair<int, int> d, std::pair<int, int> e,
           std::pair<long, float> (*func)(int depth));

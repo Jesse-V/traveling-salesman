@@ -15,11 +15,37 @@ int main(int argc, char** argv)
 {
     distances_ = getDistances(getCities());
 
-    //test(std::make_pair(1, 12), std::make_pair(13, 13), std::make_pair(14, 14),
-    //    std::make_pair(15, 15), std::make_pair(16, 16), doExhaustive);
+    //test(std::make_pair(1, 11), std::make_pair(2, 1), std::make_pair(2, 1),
+    //    std::make_pair(2, 1), std::make_pair(2, 1), doExhaustive);
 
-    test(std::make_pair(1, 10), std::make_pair(2, 1), std::make_pair(2, 1),
-        std::make_pair(2, 1), std::make_pair(2, 1), doBranchAndBound);
+    //test(std::make_pair(1, 11), std::make_pair(2, 1), std::make_pair(2, 1),
+    //    std::make_pair(2, 1), std::make_pair(2, 1), doBranchAndBound);
+
+    auto result1 = test(exhaustive, 5);
+    std::cout << result1.first << " " << result1.second << std::endl;
+
+    auto result2 = test(branchAndBound, 5);
+    std::cout << result2.first << " " << result2.second << std::endl;
+
+/*
+    int j = 3;
+    float minA = FLT_MAX, minB = FLT_MAX;
+    for (int k = 0; k < 10; k++)
+    {
+        float dist = distances_[j][k];
+        if (dist < minB)
+        {
+            if (dist < minA)
+            {
+                minB = minA;
+                minA = dist;
+            }
+            else
+                minB = dist;
+        }
+    }
+    std::cout << minA << " " << minB;
+*/
 }
 
 
@@ -64,7 +90,7 @@ void exhaustive(std::vector<int>& visited, std::size_t depth,
 
 
 void branchAndBound(std::vector<int>& visited, std::size_t depth,
-                float& bestSoFar, std::size_t maxCities
+                    float& bestSoFar, std::size_t maxCities
 )
 {
     if (depth == maxCities)
@@ -89,20 +115,57 @@ void branchAndBound(std::vector<int>& visited, std::size_t depth,
         return;
     }
 
+    static std::vector<std::pair<float, float>> minCosts;
+    if (minCosts.empty())
+    {
+        for (int j = 0; j < maxCities; j++)
+        {
+            float minA = FLT_MAX, minB = FLT_MAX;
+            for (int k = 0; k < maxCities; k++)
+            {
+                float dist = distances_[j][k];
+                if (dist < minB)
+                {
+                    if (dist < minA)
+                    {
+                        minB = minA;
+                        minA = dist;
+                    }
+                    else
+                        minB = dist;
+                }
+            }
+            minCosts.push_back(std::make_pair(minA, minB));
+        }
+    }
+
     for (int j = 0; j < maxCities; j++)
     {
         if (std::find(visited.begin(), visited.end(), j) == visited.end())
         {
-            visited.push_back(j);
-            exhaustive(visited, depth + 1, bestSoFar, maxCities);
-            visited.pop_back();
+            float lowerBound = 0;
+            for (int k = 0; k < maxCities; k++)
+                if (j == k ||
+                    std::find(visited.begin(), visited.end(), k) == visited.end()
+                )
+                    lowerBound += minCosts[k].first + minCosts[k].second;
+
+            std::cout << bestSoFar << " " << (0.5f * lowerBound) << std::endl;
+
+            if (bestSoFar > 0.5f * lowerBound)
+            {
+                visited.push_back(j);
+                exhaustive(visited, depth + 1, bestSoFar, maxCities);
+                visited.pop_back();
+            }
         }
     }
 }
 
 
 
-std::pair<long, float> doBranchAndBound(int depth)
+std::pair<long, float> test(void (*func)(std::vector<int>& visited, std::size_t depth,
+                            float& bestSoFar, std::size_t maxCities), int depth)
 {
     using namespace std::chrono;
 
@@ -110,7 +173,7 @@ std::pair<long, float> doBranchAndBound(int depth)
     std::vector<int> stack;
 
     auto start = steady_clock::now();
-    branchAndBound(stack, 0, best, depth);
+    (*func)(stack, 0, best, depth);
     long us = duration_cast<microseconds>(steady_clock::now() - start).count();
     return std::make_pair(us, best);
 }
