@@ -21,10 +21,10 @@ int main(int argc, char** argv)
     //test(std::make_pair(1, 11), std::make_pair(2, 1), std::make_pair(2, 1),
     //    std::make_pair(2, 1), std::make_pair(2, 1), doBranchAndBound);
 
-    auto result1 = test(exhaustive, 5);
+    auto result1 = test(exhaustive, 10);
     std::cout << result1.first << " " << result1.second << std::endl;
 
-    auto result2 = test(branchAndBound, 5);
+    auto result2 = test(branchAndBound, 10);
     std::cout << result2.first << " " << result2.second << std::endl;
 
 /*
@@ -50,25 +50,17 @@ int main(int argc, char** argv)
 
 
 
-void exhaustive(std::vector<int>& visited, std::size_t depth,
-                float& bestSoFar, std::size_t maxCities
+void exhaustive(std::vector<int>& stack, std::size_t depth, std::size_t maxD,
+                float& bestSoFar, std::vector<bool>& visited
 )
 {
-    if (depth == maxCities)
+    if (depth == maxD)
     {
-        //std::cout << "Tour { ";
-
         float cost = 0;
         std::size_t j;
-        for (j = 0; j < visited.size() - 1; j++)
-        {
-            //std::cout << visited[j] << " ";
-            cost += distances_[visited[j]][visited[j + 1]];
-        }
-        cost += distances_[visited[j]][visited[0]];
-
-        //std::cout << visited[j] << " " << visited[0] <<
-        //    " } cost of " << cost << std::endl;
+        for (j = 0; j < stack.size() - 1; j++)
+            cost += distances_[stack[j]][stack[j + 1]];
+        cost += distances_[stack[j]][stack[0]];
 
         if (cost < bestSoFar)
             bestSoFar = cost;
@@ -76,52 +68,45 @@ void exhaustive(std::vector<int>& visited, std::size_t depth,
         return;
     }
 
-    for (int j = 0; j < maxCities; j++)
+    for (int j = 0; j < maxD; j++)
     {
-        if (std::find(visited.begin(), visited.end(), j) == visited.end())
+        if (!visited[j])
         {
-            visited.push_back(j);
-            exhaustive(visited, depth + 1, bestSoFar, maxCities);
-            visited.pop_back();
+            visited[j] = true;
+            stack.push_back(j);
+            exhaustive(stack, depth + 1, maxD, bestSoFar, visited);
+            stack.pop_back();
+            visited[j] = false;
         }
     }
 }
 
 
 
-void branchAndBound(std::vector<int>& visited, std::size_t depth,
-                    float& bestSoFar, std::size_t maxCities
+void branchAndBound(std::vector<int>& stack, std::size_t depth, std::size_t maxD,
+                    float& bestSoFar, std::vector<bool>& visited
 )
 {
-    if (depth == maxCities)
+    if (depth == maxD)
     {
-        //std::cout << "Tour { ";
-
         float cost = 0;
         std::size_t j;
-        for (j = 0; j < visited.size() - 1; j++)
-        {
-            //std::cout << visited[j] << " ";
-            cost += distances_[visited[j]][visited[j + 1]];
-        }
-        cost += distances_[visited[j]][visited[0]];
-
-        //std::cout << visited[j] << " " << visited[0] <<
-        //    " } cost of " << cost << std::endl;
+        for (j = 0; j < stack.size() - 1; j++)
+            cost += distances_[stack[j]][stack[j + 1]];
+        cost += distances_[stack[j]][stack[0]];
 
         if (cost < bestSoFar)
             bestSoFar = cost;
-
         return;
     }
 
     static std::vector<std::pair<float, float>> minCosts;
     if (minCosts.empty())
     {
-        for (int j = 0; j < maxCities; j++)
+        for (std::size_t j = 0; j < maxD; j++)
         {
             float minA = FLT_MAX, minB = FLT_MAX;
-            for (int k = 0; k < maxCities; k++)
+            for (std::size_t k = 0; k < maxD; k++)
             {
                 float dist = distances_[j][k];
                 if (dist < minB)
@@ -139,41 +124,40 @@ void branchAndBound(std::vector<int>& visited, std::size_t depth,
         }
     }
 
-    for (int j = 0; j < maxCities; j++)
+    float lowerBound = 0;
+    for (std::size_t k = 0; k < maxD; k++)
+        if (!visited[k])
+            lowerBound += minCosts[k].first + minCosts[k].second;
+    if (bestSoFar < 0.5f * lowerBound)
+        return;
+
+    for (int j = 0; j < maxD; j++)
     {
-        if (std::find(visited.begin(), visited.end(), j) == visited.end())
+        if (!visited[j])
         {
-            float lowerBound = 0;
-            for (int k = 0; k < maxCities; k++)
-                if (j == k ||
-                    std::find(visited.begin(), visited.end(), k) == visited.end()
-                )
-                    lowerBound += minCosts[k].first + minCosts[k].second;
-
-            std::cout << bestSoFar << " " << (0.5f * lowerBound) << std::endl;
-
-            if (bestSoFar > 0.5f * lowerBound)
-            {
-                visited.push_back(j);
-                exhaustive(visited, depth + 1, bestSoFar, maxCities);
-                visited.pop_back();
-            }
+            visited[j] = true;
+            stack.push_back(j);
+            branchAndBound(stack, depth + 1, maxD, bestSoFar, visited);
+            stack.pop_back();
+            visited[j] = false;
         }
     }
 }
 
 
 
-std::pair<long, float> test(void (*func)(std::vector<int>& visited, std::size_t depth,
-                            float& bestSoFar, std::size_t maxCities), int depth)
+std::pair<long, float> test(void (*func)(std::vector<int>& stack,
+    std::size_t depth, std::size_t maxD, float& bestSoFar,
+    std::vector<bool>& visited), std::size_t depth)
 {
     using namespace std::chrono;
 
     float best = FLT_MAX;
     std::vector<int> stack;
+    std::vector<bool> visited(depth, false);
 
     auto start = steady_clock::now();
-    (*func)(stack, 0, best, depth);
+    (*func)(stack, 0, depth, best, visited);
     long us = duration_cast<microseconds>(steady_clock::now() - start).count();
     return std::make_pair(us, best);
 }
