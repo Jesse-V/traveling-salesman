@@ -58,7 +58,8 @@ void exhaustive(std::vector<int>& stack, std::size_t depth, std::size_t maxD,
 
 
 void branchAndBound(std::vector<int>& stack, std::size_t depth, std::size_t maxD,
-                    float& bestSoFar, std::vector<bool>& visited
+                    float& bestSoFar, std::vector<bool>& visited,
+                    const std::vector<std::pair<float, float>>& minCosts
 )
 {
     if (depth == maxD)
@@ -74,30 +75,6 @@ void branchAndBound(std::vector<int>& stack, std::size_t depth, std::size_t maxD
         return;
     }
 
-    static std::vector<std::pair<float, float>> minCosts;
-    if (minCosts.empty())
-    {
-        for (std::size_t j = 0; j < maxD; j++)
-        {
-            float minA = FLT_MAX, minB = FLT_MAX;
-            for (std::size_t k = 0; k < maxD; k++)
-            {
-                float dist = distances_[j][k];
-                if (dist < minB)
-                {
-                    if (dist < minA)
-                    {
-                        minB = minA;
-                        minA = dist;
-                    }
-                    else
-                        minB = dist;
-                }
-            }
-            minCosts.push_back(std::make_pair(minA, minB));
-        }
-    }
-
     float lowerBound = 0;
     for (std::size_t k = 0; k < maxD; k++)
         if (!visited[k])
@@ -111,7 +88,7 @@ void branchAndBound(std::vector<int>& stack, std::size_t depth, std::size_t maxD
         {
             visited[j] = true;
             stack.push_back((int)j);
-            branchAndBound(stack, depth + 1, maxD, bestSoFar, visited);
+            branchAndBound(stack, depth + 1, maxD, bestSoFar, visited, minCosts);
             stack.pop_back();
             visited[j] = false;
         }
@@ -121,8 +98,7 @@ void branchAndBound(std::vector<int>& stack, std::size_t depth, std::size_t maxD
 
 
 std::pair<long, float> doExhaustive(std::size_t depth)
-{ //almost identical code to doBranchAndBound
-
+{
     using namespace std::chrono;
 
     float best = FLT_MAX;
@@ -138,16 +114,36 @@ std::pair<long, float> doExhaustive(std::size_t depth)
 
 
 std::pair<long, float> doBranchAndBound(std::size_t depth)
-{ //almost identical code to doExhaustive
-
+{
     using namespace std::chrono;
 
     float best = FLT_MAX;
     std::vector<int> stack;
     std::vector<bool> visited(depth, false);
 
+    std::vector<std::pair<float, float>> minCosts;
+    for (std::size_t j = 0; j < depth; j++)
+    {
+        float minA = FLT_MAX, minB = FLT_MAX;
+        for (std::size_t k = 0; k < depth; k++)
+        {
+            float dist = distances_[j][k];
+            if (dist < minB)
+            {
+                if (dist < minA)
+                {
+                    minB = minA;
+                    minA = dist;
+                }
+                else
+                    minB = dist;
+            }
+        }
+        minCosts.push_back(std::make_pair(minA, minB));
+    }
+
     auto start = steady_clock::now();
-    branchAndBound(stack, 0, depth, best, visited);
+    branchAndBound(stack, 0, depth, best, visited, minCosts);
     long us = duration_cast<microseconds>(steady_clock::now() - start).count();
     return std::make_pair(us, best);
 }

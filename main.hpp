@@ -19,7 +19,8 @@ struct City
 void exhaustive(std::vector<int>& stack, std::size_t depth, std::size_t maxD,
                 float& bestSoFar, std::vector<bool>& visited);
 void branchAndBound(std::vector<int>& stack, std::size_t depth, std::size_t maxD,
-                float& bestSoFar, std::vector<bool>& visited);
+                    float& bestSoFar, std::vector<bool>& visited,
+                    const std::vector<std::pair<float, float>>& minCosts);
 
 std::pair<long, float> doExhaustive(std::size_t depth);
 std::pair<long, float> doBranchAndBound(std::size_t depth);
