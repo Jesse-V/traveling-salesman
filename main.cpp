@@ -15,11 +15,11 @@ int main(int argc, char** argv)
 {
     distances_ = getDistances(getCities());
 
-    test(std::make_pair(1, 11), std::make_pair(12, 12), std::make_pair(13, 13),
-         std::make_pair(14, 14), std::make_pair(15, 15), doExhaustive);
+    test(std::make_pair(1, 12), std::make_pair(13, 13), std::make_pair(14, 14),
+         std::make_pair(15, 15), std::make_pair(16, 16), doExhaustive);
 
-    test(std::make_pair(1, 11), std::make_pair(12, 12), std::make_pair(13, 13),
-         std::make_pair(14, 14), std::make_pair(15, 15), doBranchAndBound);
+    test(std::make_pair(1, 12), std::make_pair(13, 13), std::make_pair(14, 14),
+         std::make_pair(15, 15), std::make_pair(16, 16), doBranchAndBound);
 }
 
 
