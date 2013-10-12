@@ -40,27 +40,39 @@ int main(int argc, char** argv)
 {
     const int SIZE = 14, MAX_TEST = 10, CUTOFF_SECONDS = 6;
 
-    float costSum = 0;
-    for (int j = 0; j < MAX_TEST; j++)
+    using std::chrono::system_clock;
+    for (int op = 0; op < 3; op++)
     {
-        auto seed = std::chrono::system_clock::now().time_since_epoch().count();
-        auto tour = getRandomTour(SIZE, seed);
-        auto decentTour = simulatedAnnealing(tour, CUTOFF_SECONDS, seed);
-        costSum += getCost(decentTour);
-        std::cout << (j + 1) << " / " << MAX_TEST << std::endl;
+        std::cout << "Testing operation " << op << " with cutoff of " <<
+            CUTOFF_SECONDS << " seconds" << std::endl;
+
+        float costSum = 0;
+        for (int j = 0; j < MAX_TEST; j++)
+        {
+            auto seed = system_clock::now().time_since_epoch().count();
+            auto tour = getRandomTour(SIZE, seed);
+            auto decentTour = simulatedAnnealing(tour, CUTOFF_SECONDS, seed, op);
+            auto cost = getCost(decentTour);
+            costSum += cost;
+            std::cout << (j + 1) << " / " << MAX_TEST << ", found cost of " <<
+                cost << std::endl;
+        }
+
+        std::cout << "Average cost: " << (costSum / MAX_TEST) << std::endl;
     }
 
-    std::cout << "Average cost: " << (costSum / MAX_TEST) << std::endl;
+    std::cout << "Actual solution for N=" << SIZE << " is " << 715.304 << std::endl;
 
-    //swap: 737.912
-    //reverse: 733.925
-    //scramble: 737.773
+    //swap: 731.184, found optimal
+    //reverse: 722.561, found optimal
+    //scramble: 721.678, found optimal
     //actual low: 715.304
 }
 
 
 
-std::vector<int> simulatedAnnealing(std::vector<int> tour, long maxSeconds, long seed)
+std::vector<int> simulatedAnnealing(std::vector<int> tour, long maxSeconds,
+                                    long seed, int op)
 {
     bool cutoffHappened = false;
     std::thread cutoff([&]() {
@@ -70,45 +82,50 @@ std::vector<int> simulatedAnnealing(std::vector<int> tour, long maxSeconds, long
     cutoff.detach();
 
     std::vector<int> bestSoFar(tour);
-    float cheapestCostSoFar = FLT_MAX;
+    float cheapestCostSoFar = FLT_MAX, cost = FLT_MAX;
     std::mt19937 mersenneTwister(seed);
     std::uniform_int_distribution<int> randomIndex(0, (int)tour.size() - 1);
+
     while (true)
     {
-        float cost = getCost(tour);
-        if (cost < cheapestCostSoFar)
+        do
         {
-            cheapestCostSoFar = cost;
-            std::copy(tour.begin(), tour.end(), bestSoFar.begin());
-            //print(tour);
-            //std::cout << tour[0] << ", cost of " << cost << std::endl;
-        }
+            if (cutoffHappened)
+                return bestSoFar;
 
-        if (cutoffHappened)
-            return bestSoFar;
+            std::size_t a = 0, b = 0;
+            while (a >= b)
+            {
+                a = (std::size_t)randomIndex(mersenneTwister);
+                b = (std::size_t)randomIndex(mersenneTwister);
+            }
 
-        std::size_t a = 0, b = 0;
-        while (a >= b)
-        {
-            a = (std::size_t)randomIndex(mersenneTwister);
-            b = (std::size_t)randomIndex(mersenneTwister);
-        }
+            tour = bestSoFar;
 
-        /*
-        //super-fast in-place swap
-        tour[a] ^= tour[b];
-        tour[b] ^= tour[a];
-        tour[a] ^= tour[b];
-        */
+            if (op == 0)
+            {
+                //super-fast in-place swap
+                tour[a] ^= tour[b];
+                tour[b] ^= tour[a];
+                tour[a] ^= tour[b];
+            }
+            else if (op == 1)
+            {
+                std::shuffle(tour.begin() + (const long)a,
+                             tour.begin() + (const long)b, mersenneTwister);
+            }
+            else if (op == 2)
+            {
+                std::reverse(tour.begin() + (const long)a,
+                             tour.begin() + (const long)b);
+            }
 
-        /*
-        std::reverse(tour.begin() + (const long)a, tour.begin() + (const long)b);
-        */
+            cost = getCost(tour);
 
+        } while (cost >= cheapestCostSoFar);
 
-        std::shuffle(tour.begin() + (const long)a,
-                     tour.begin() + (const long)b, mersenneTwister);
-
+        bestSoFar = tour;
+        cheapestCostSoFar = cost;
     }
 }
 
