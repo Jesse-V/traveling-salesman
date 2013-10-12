@@ -38,14 +38,36 @@
 
 int main(int argc, char** argv)
 {
-    const int SIZE = 14;
-    auto seed = std::chrono::system_clock::now().time_since_epoch().count();
-    auto tour = getRandomTour(SIZE, seed);
+    const int SIZE = 14, MAX_TEST = 10, CUTOFF_SECONDS = 6;
 
-    std::vector<int> bestSoFar(SIZE);
+    float costSum = 0;
+    for (int j = 0; j < MAX_TEST; j++)
+    {
+        auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+        auto tour = getRandomTour(SIZE, seed);
+        auto decentTour = simulatedAnnealing(tour, CUTOFF_SECONDS);
+        costSum += getCost(decentTour);
+        std::cout << (j + 1) << " / " << MAX_TEST << std::endl;
+    }
+
+    std::cout << "Average cost: " << (costSum / MAX_TEST) << std::endl;
+}
+
+
+
+std::vector<int> simulatedAnnealing(std::vector<int> tour, long maxSeconds)
+{
+    bool cutoffHappened = false;
+    std::thread cutoff([&]() {
+        std::this_thread::sleep_for(std::chrono::seconds(maxSeconds));
+        cutoffHappened = true;
+    });
+    cutoff.detach();
+
+    std::vector<int> bestSoFar(tour);
     float cheapestCostSoFar = FLT_MAX;
     std::mt19937 mersenneTwister;
-    std::uniform_int_distribution<int> randomIndex(0, SIZE - 1);
+    std::uniform_int_distribution<int> randomIndex(0, (int)tour.size() - 1);
     while (true)
     {
         float cost = getCost(tour);
@@ -53,9 +75,12 @@ int main(int argc, char** argv)
         {
             cheapestCostSoFar = cost;
             std::copy(tour.begin(), tour.end(), bestSoFar.begin());
-            print(tour);
-            std::cout << tour[0] << ", cost of " << cost << std::endl;
+            //print(tour);
+            //std::cout << tour[0] << ", cost of " << cost << std::endl;
         }
+
+        if (cutoffHappened)
+            return bestSoFar;
 
         std::size_t a = 0, b = 0;
         while (a == b)
