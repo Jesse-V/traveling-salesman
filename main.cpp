@@ -18,11 +18,11 @@
     ops
         need three
             I choose:
-                "swap 2"
-                "reverse section"
-                "scramble section"
+                "swap 2"                DONE
+                "reverse section"       DONE
+                "scramble section"      DONE
         measure:
-            solution quality
+            solution quality            DONE
             speed of convergence
 
     test via experiments:
@@ -45,17 +45,22 @@ int main(int argc, char** argv)
     {
         auto seed = std::chrono::system_clock::now().time_since_epoch().count();
         auto tour = getRandomTour(SIZE, seed);
-        auto decentTour = simulatedAnnealing(tour, CUTOFF_SECONDS);
+        auto decentTour = simulatedAnnealing(tour, CUTOFF_SECONDS, seed);
         costSum += getCost(decentTour);
         std::cout << (j + 1) << " / " << MAX_TEST << std::endl;
     }
 
     std::cout << "Average cost: " << (costSum / MAX_TEST) << std::endl;
+
+    //swap: 737.912
+    //reverse: 733.925
+    //scramble: 737.773
+    //actual low: 715.304
 }
 
 
 
-std::vector<int> simulatedAnnealing(std::vector<int> tour, long maxSeconds)
+std::vector<int> simulatedAnnealing(std::vector<int> tour, long maxSeconds, long seed)
 {
     bool cutoffHappened = false;
     std::thread cutoff([&]() {
@@ -66,7 +71,7 @@ std::vector<int> simulatedAnnealing(std::vector<int> tour, long maxSeconds)
 
     std::vector<int> bestSoFar(tour);
     float cheapestCostSoFar = FLT_MAX;
-    std::mt19937 mersenneTwister;
+    std::mt19937 mersenneTwister(seed);
     std::uniform_int_distribution<int> randomIndex(0, (int)tour.size() - 1);
     while (true)
     {
@@ -83,16 +88,27 @@ std::vector<int> simulatedAnnealing(std::vector<int> tour, long maxSeconds)
             return bestSoFar;
 
         std::size_t a = 0, b = 0;
-        while (a == b)
+        while (a >= b)
         {
             a = (std::size_t)randomIndex(mersenneTwister);
             b = (std::size_t)randomIndex(mersenneTwister);
         }
 
+        /*
         //super-fast in-place swap
         tour[a] ^= tour[b];
         tour[b] ^= tour[a];
         tour[a] ^= tour[b];
+        */
+
+        /*
+        std::reverse(tour.begin() + (const long)a, tour.begin() + (const long)b);
+        */
+
+
+        std::shuffle(tour.begin() + (const long)a,
+                     tour.begin() + (const long)b, mersenneTwister);
+
     }
 }
 
@@ -103,7 +119,10 @@ std::vector<int> getRandomTour(std::size_t size, long seed)
     std::vector<int> tour(size);
     for (std::size_t j = 0; j < size; j++)
         tour[j] = (int)j;
-    std::shuffle(tour.begin(), tour.end(), std::default_random_engine(seed));
+
+    std::mt19937 mersenneTwister(seed);
+    std::shuffle(tour.begin(), tour.end(), mersenneTwister);
+
     return tour;
 }
 
