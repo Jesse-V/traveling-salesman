@@ -9,8 +9,104 @@
 #include <chrono>
 #include <cfloat>
 
-Distances distances_;
+/*  simulated annealing
+        hill climbing with heat
+    hill climbing
+        first random op that reduces tour length
+        like simulated annealing but with temp of 0
 
+    ops
+        need three
+            I choose:
+                "swap 2"
+                "reverse section"
+                "scramble section"
+        measure:
+            solution quality
+            speed of convergence
+
+    test via experiments:
+        performance as number of cities increases?
+        given fixed amount of time on single CPU, most effective application?
+            tradeoff between running longer or with another restart
+            demonstrate on provided 256 city problem
+        effect of initial temp and cooling strategy on the SA
+        which op performs best and why
+
+    brief report, results, answers to above, code, snapshot of running prog
+*/
+
+int main(int argc, char** argv)
+{
+    const int SIZE = 14;
+    auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+    auto tour = getRandomTour(SIZE, seed);
+
+    std::vector<int> bestSoFar(SIZE);
+    float cheapestCostSoFar = FLT_MAX;
+    std::mt19937 mersenneTwister;
+    std::uniform_int_distribution<int> randomIndex(0, SIZE - 1);
+    while (true)
+    {
+        float cost = getCost(tour);
+        if (cost < cheapestCostSoFar)
+        {
+            cheapestCostSoFar = cost;
+            std::copy(tour.begin(), tour.end(), bestSoFar.begin());
+            print(tour);
+            std::cout << tour[0] << ", cost of " << cost << std::endl;
+        }
+
+        std::size_t a = 0, b = 0;
+        while (a == b)
+        {
+            a = (std::size_t)randomIndex(mersenneTwister);
+            b = (std::size_t)randomIndex(mersenneTwister);
+        }
+
+        //super-fast in-place swap
+        tour[a] ^= tour[b];
+        tour[b] ^= tour[a];
+        tour[a] ^= tour[b];
+    }
+}
+
+
+
+std::vector<int> getRandomTour(std::size_t size, long seed)
+{
+    std::vector<int> tour(size);
+    for (std::size_t j = 0; j < size; j++)
+        tour[j] = (int)j;
+    std::shuffle(tour.begin(), tour.end(), std::default_random_engine(seed));
+    return tour;
+}
+
+
+
+float getCost(const std::vector<int>& tour)
+{
+    static Distances distances = getDistances(getCities());
+
+    float cost = 0;
+    std::size_t j;
+    for (j = 0; j < tour.size() - 1; j++)
+        cost += distances[(std::size_t)tour[j]][(std::size_t)tour[j + 1]];
+    cost += distances[(std::size_t)tour[j]][(std::size_t)tour[0]];
+    return cost;
+}
+
+
+void print(const std::vector<int>& tour)
+{
+    for (std::size_t j = 0; j < tour.size(); j++)
+        std::cout << tour[j] << " ";
+}
+
+
+/******************************** OLDER SOLUTIONS *********************/
+
+/*
 int main(int argc, char** argv)
 {
     distances_ = getDistances(getCities());
@@ -21,7 +117,6 @@ int main(int argc, char** argv)
     test(std::make_pair(1, 12), std::make_pair(13, 13), std::make_pair(14, 14),
          std::make_pair(15, 15), std::make_pair(16, 16), doBranchAndBound);
 }
-
 
 
 void exhaustive(std::vector<int>& stack, std::size_t depth, std::size_t maxD,
@@ -200,7 +295,7 @@ void test(std::pair<int, int> a, std::pair<int, int> b, std::pair<int, int> c,
     thread3.join();
     thread4.join();
     thread5.join();
-}
+}*/
 
 
 
