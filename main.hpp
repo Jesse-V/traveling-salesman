@@ -16,8 +16,11 @@ struct City
     {}
 };
 
+float doTest(int size, float temperature, float coefficient,
+            int nTests, int cutoff, int operation);
 std::vector<int> simulatedAnnealing(std::vector<int> tour, long maxSeconds,
-                                    float temperature, long seed, int op);
+                                    float temperature, float tempCoefficient,
+                                    long seed, int op);
 std::vector<int> getRandomTour(std::size_t size, long seed);
 float getCost(const std::vector<int>& tour);
 void print(const std::vector<int>& tour);

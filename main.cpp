@@ -10,7 +10,7 @@
 #include <cfloat>
 
 /*  simulated annealing
-        hill climbing with heat
+        hill climbing with heat                            DONE
     hill climbing
         first random op that reduces tour length           DONE
         like simulated annealing but with temp of 0        DONE
@@ -38,29 +38,20 @@
 
 int main(int argc, char** argv)
 {
-    const int SIZE = 14, MAX_TEST = 10, CUTOFF_SECONDS = 6;
-    const float temperature = 0;
+    const int SIZE = 14, N_TESTS = 10, CUTOFF_SECONDS = 6;
+    const float TEMPERATURE = 1;
 
-    using std::chrono::system_clock;
-    for (int op = 0; op < 3; op++)
+    for (int coefficient = 0; coefficient <= 1; coefficient += 0.25f)
     {
-        std::cout << "Testing operation " << op << " with cutoff of " <<
-            CUTOFF_SECONDS << " seconds" << std::endl;
-
-        float costSum = 0;
-        for (int j = 0; j < MAX_TEST; j++)
+        for (int op = 0; op < 3; op++)
         {
-            auto seed = system_clock::now().time_since_epoch().count();
-            auto tour = getRandomTour(SIZE, seed);
-            auto decentTour = simulatedAnnealing(tour, CUTOFF_SECONDS,
-                                                 temperature, seed, op);
-            auto cost = getCost(decentTour);
-            costSum += cost;
-            std::cout << (j + 1) << " / " << MAX_TEST << ", found cost of " <<
-                cost << std::endl;
-        }
+            std::cout << "Testing operation " << op << " with cutoff of " <<
+                CUTOFF_SECONDS << " seconds" << std::endl;
 
-        std::cout << "Average cost: " << (costSum / MAX_TEST) << std::endl;
+            float averageCost = doTest(SIZE, TEMPERATURE, coefficient,
+                                       N_TESTS, CUTOFF_SECONDS, op);
+            std::cout << "Average cost: " << averageCost << std::endl;
+        }
     }
 
     std::cout << "Actual solution for N=" << SIZE << " is " << 715.304 << std::endl;
@@ -73,8 +64,33 @@ int main(int argc, char** argv)
 
 
 
+float doTest(int size, float temperature, float coefficient,
+            int nTests, int cutoff, int operation)
+{
+    float costSum = 0;
+
+    using std::chrono::system_clock;
+    for (int j = 0; j < nTests; j++)
+    {
+        auto seed = system_clock::now().time_since_epoch().count();
+        auto tour = getRandomTour(size, seed);
+        auto decentTour = simulatedAnnealing(tour, cutoff,
+                                             temperature, coefficient,
+                                             seed, operation);
+        auto cost = getCost(decentTour);
+        costSum += cost;
+        std::cout << (j + 1) << " / " << nTests << ", found cost of " <<
+            cost << std::endl;
+    }
+
+    return costSum / nTests;
+}
+
+
+
 std::vector<int> simulatedAnnealing(std::vector<int> tour, long maxSeconds,
-                                    float temperature, long seed, int op)
+                                    float temperature, float tempCoefficient,
+                                    long seed, int op)
 {
     bool cutoffHappened = false;
     std::thread cutoff([&]() {
@@ -131,6 +147,7 @@ std::vector<int> simulatedAnnealing(std::vector<int> tour, long maxSeconds,
 
         bestSoFar = tour;
         cheapestCostSoFar = cost;
+        temperature *= tempCoefficient;
     }
 }
 
