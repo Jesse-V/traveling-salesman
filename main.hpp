@@ -17,7 +17,7 @@ struct City
 };
 
 std::vector<int> simulatedAnnealing(std::vector<int> tour, long maxSeconds,
-                                    long seed, int op);
+                                    float temperature, long seed, int op);
 std::vector<int> getRandomTour(std::size_t size, long seed);
 float getCost(const std::vector<int>& tour);
 void print(const std::vector<int>& tour);

@@ -12,8 +12,8 @@
 /*  simulated annealing
         hill climbing with heat
     hill climbing
-        first random op that reduces tour length
-        like simulated annealing but with temp of 0
+        first random op that reduces tour length           DONE
+        like simulated annealing but with temp of 0        DONE
 
     ops
         need three
@@ -23,7 +23,7 @@
                 "scramble section"      DONE
         measure:
             solution quality            DONE
-            speed of convergence
+            speed of convergence        DONE - via cutoff
 
     test via experiments:
         performance as number of cities increases?
@@ -39,6 +39,7 @@
 int main(int argc, char** argv)
 {
     const int SIZE = 14, MAX_TEST = 10, CUTOFF_SECONDS = 6;
+    const float temperature = 0;
 
     using std::chrono::system_clock;
     for (int op = 0; op < 3; op++)
@@ -51,7 +52,8 @@ int main(int argc, char** argv)
         {
             auto seed = system_clock::now().time_since_epoch().count();
             auto tour = getRandomTour(SIZE, seed);
-            auto decentTour = simulatedAnnealing(tour, CUTOFF_SECONDS, seed, op);
+            auto decentTour = simulatedAnnealing(tour, CUTOFF_SECONDS,
+                                                 temperature, seed, op);
             auto cost = getCost(decentTour);
             costSum += cost;
             std::cout << (j + 1) << " / " << MAX_TEST << ", found cost of " <<
@@ -72,7 +74,7 @@ int main(int argc, char** argv)
 
 
 std::vector<int> simulatedAnnealing(std::vector<int> tour, long maxSeconds,
-                                    long seed, int op)
+                                    float temperature, long seed, int op)
 {
     bool cutoffHappened = false;
     std::thread cutoff([&]() {
@@ -82,9 +84,10 @@ std::vector<int> simulatedAnnealing(std::vector<int> tour, long maxSeconds,
     cutoff.detach();
 
     std::vector<int> bestSoFar(tour);
-    float cheapestCostSoFar = FLT_MAX, cost = FLT_MAX;
+    float cheapestCostSoFar = FLT_MAX, cost = FLT_MAX, chance;
     std::mt19937 mersenneTwister(seed);
     std::uniform_int_distribution<int> randomIndex(0, (int)tour.size() - 1);
+    std::uniform_real_distribution<float> random(0, 1);
 
     while (true)
     {
@@ -121,8 +124,10 @@ std::vector<int> simulatedAnnealing(std::vector<int> tour, long maxSeconds,
             }
 
             cost = getCost(tour);
+            chance = random(mersenneTwister);
 
-        } while (cost >= cheapestCostSoFar);
+        } while (fabs(chance - temperature) <= FLT_EPSILON
+                 || cost >= cheapestCostSoFar);
 
         bestSoFar = tour;
         cheapestCostSoFar = cost;
